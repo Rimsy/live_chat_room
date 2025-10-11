@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="message-box">
+    <h2>Chat Room: {{code}}</h2>
+    <div class="messages" id="messages"></div>
+    <div class="inputs">
+        <input
+         type="text"
+         placeholder="Message"
+         name="message"
+         id="message"
+        />
+        <button type="button" name="send" id="send-btn" onClick="sendMessage()">
+            Send
+        </button>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var socketio = io();
+    const messages = document.getElementById("messages")
+
+    const createMessage = (name, msg, self=false) =>{
+        const content =`
+        <div class="text ${self ? 'self' : 'other'}">
+            <div class="text-header">
+                <span class="username">${name}</span>
+                <span class="timestamp">${new Date().toLocaleString()}</span>
+            </div>
+            <span class="message-content">${msg}</span>
+        </div>`;
+        messages.innerHTML += content;
+        messages.scrollTop = messages.scrollHeight;
+    };
+
+    socketio.on("message",(data) =>{
+        const self = data.name === "{{name}}";
+        createMessage(data.name, data.message, self);
+    });
+
+    const sendMessage = () => {
+        const message = document.getElementById("message");
+        if(message.value.trim() === "") return;
+        socketio.emit("message",{data: message.value});
+        createMessage("{{name}}", message.value, true);
+        message.value = "";
+    };
+
+    document.getElementById("message").addEventListener("keypress", function(e){
+        if(e.key === "Enter") sendMessage();
+    });
+</script>
+{% endblock %}
